@@ -1,4 +1,30 @@
 // app.js
+async function loadWords() {
+  // Usa path relativo: su GitHub Pages funziona se words.json è nella stessa cartella di index.html
+  const res = await fetch("./words.json", { cache: "no-store" });
+  if (!res.ok) throw new Error(`Impossibile caricare words.json (HTTP ${res.status})`);
+  const data = await res.json();
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("words.json non contiene un array valido o è vuoto");
+  }
+
+  // Validazione minima
+  WORD_PAIRS = data
+    .filter(x => x && typeof x.word === "string" && x.word.trim())
+    .map(x => ({ word: x.word.trim(), hint: (x.hint ?? "").toString().trim() }));
+
+  if (WORD_PAIRS.length === 0) throw new Error("words.json non contiene elementi validi");
+}
+
+function pickWordPair(){
+  if (Array.isArray(WORD_PAIRS) && WORD_PAIRS.length) {
+    return pickRandom(WORD_PAIRS);
+  }
+  // fallback (meglio esplicito, ma in produzione non dovrebbe mai scattare)
+  return { word: "Parola", hint: "Suggerimento" };
+}
+
 const $ = (sel) => document.querySelector(sel);
 
 const STATE = {
@@ -446,11 +472,31 @@ function render(){
 // -----------------------------
 // Init
 // -----------------------------
-(function init(){
+(async function init(){
   const savedTheme = localStorage.getItem("impostore_theme") || "light";
   applyTheme(savedTheme);
-
   $("#themeToggle").addEventListener("click", toggleTheme);
+
+  try {
+    await loadWords();
+  } catch (e) {
+    console.warn(e);
+    // Mostra un messaggio chiaro in UI invece di lasciar scattare il fallback senza spiegazione
+    const root = document.querySelector("#cardContent");
+    if (root) {
+      root.innerHTML = `
+        <h2 class="h2">Errore caricamento parole</h2>
+        <p class="p">
+          Non riesco a caricare <strong>words.json</strong>.
+          Controlla che sia pubblicato nella stessa cartella di <strong>index.html</strong>.
+        </p>
+        <div class="reveal" style="font-size:14px; text-align:left;">
+          ${String(e.message || e)}
+        </div>
+      `;
+    }
+    return;
+  }
 
   app.view = STATE.RULES;
   render();
