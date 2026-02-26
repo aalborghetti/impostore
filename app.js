@@ -1,30 +1,4 @@
 // app.js
-async function loadWords() {
-  // Usa path relativo: su GitHub Pages funziona se words.json è nella stessa cartella di index.html
-  const res = await fetch("./words.json", { cache: "no-store" });
-  if (!res.ok) throw new Error(`Impossibile caricare words.json (HTTP ${res.status})`);
-  const data = await res.json();
-
-  if (!Array.isArray(data) || data.length === 0) {
-    throw new Error("words.json non contiene un array valido o è vuoto");
-  }
-
-  // Validazione minima
-  WORD_PAIRS = data
-    .filter(x => x && typeof x.word === "string" && x.word.trim())
-    .map(x => ({ word: x.word.trim(), hint: (x.hint ?? "").toString().trim() }));
-
-  if (WORD_PAIRS.length === 0) throw new Error("words.json non contiene elementi validi");
-}
-
-function pickWordPair(){
-  if (Array.isArray(WORD_PAIRS) && WORD_PAIRS.length) {
-    return pickRandom(WORD_PAIRS);
-  }
-  // fallback (meglio esplicito, ma in produzione non dovrebbe mai scattare)
-  return { word: "Parola", hint: "Suggerimento" };
-}
-
 const $ = (sel) => document.querySelector(sel);
 
 const STATE = {
@@ -36,12 +10,17 @@ const STATE = {
   RESULT: "result",
 };
 
+// Parole caricate da words.json
+let WORD_PAIRS = [];
+
 const app = {
   view: STATE.RULES,
-  players: 6,           // 3..20
-  impostors: 1,         // 1..3, ma sempre <= players-1
-  minutes: 3,           // 1..60
-  impostorHintEnabled: true, // DEFAULT abilitata ✅
+
+  players: 6,            // 3..20
+  impostors: 1,          // 1..3 ma vincolato da floor(players/3)
+  minutes: 3,            // 1..60
+
+  impostorHintEnabled: true, // default abilitato
 
   currentPlayer: 1,
   impostorIndices: [],
@@ -49,49 +28,99 @@ const app = {
   secretHint: "",
 
   revealed: false,
+
   timerId: null,
   remainingSec: 0,
 };
 
-function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
-function pad2(n){ return String(n).padStart(2, "0"); }
+// -----------------------------
+// Utility
+// -----------------------------
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
 
-function formatMMSS(totalSec){
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function formatMMSS(totalSec) {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${pad2(m)}:${pad2(s)}`;
 }
 
-function pickRandom(arr){
+function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function sampleUniqueIndices(count, maxInclusive){
+function sampleUniqueIndices(count, maxInclusive) {
+  // ritorna array di numeri unici nel range 1..maxInclusive
   const set = new Set();
-  while (set.size < count) set.add(Math.floor(Math.random() * maxInclusive) + 1);
-  return Array.from(set).sort((a,b)=>a-b);
+  while (set.size < count) {
+    set.add(Math.floor(Math.random() * maxInclusive) + 1);
+  }
+  return Array.from(set).sort((a, b) => a - b);
 }
 
-function isImpostorCountInvalid(){
-  return app.impostors >= app.players;
+// -----------------------------
+// Vincoli impostori (NUOVO)
+// -----------------------------
+function getMaxImpostorsAllowed(players) {
+  // 1/3 per difetto
+  const oneThird = Math.floor(players / 3);
+
+  // Limite UI (1..3) + sicurezza (players-1)
+  const maxAllowed = Math.min(3, oneThird, players - 1);
+
+  // minimo 1
+  return Math.max(1, maxAllowed);
 }
 
-function normalizeImpostors(){
-  const maxAllowed = Math.max(1, Math.min(3, app.players - 1));
-  app.impostors = clamp(app.impostors, 1, maxAllowed);
+function normalizeImpostors() {
+  app.impostors = clamp(app.impostors, 1, getMaxImpostorsAllowed(app.players));
 }
 
-function pickWordPair(){
-  // WORD_PAIRS arriva da words.js
-  const list = (typeof WORD_PAIRS !== "undefined" && Array.isArray(WORD_PAIRS) && WORD_PAIRS.length)
-    ? WORD_PAIRS
-    : [{ word: "Parola", hint: "Suggerimento" }];
-
-  return pickRandom(list);
+function isImpostorCountInvalid() {
+  return app.impostors > getMaxImpostorsAllowed(app.players);
 }
 
-function resetRound(){
+// -----------------------------
+// Caricamento words.json (GitHub Pages OK)
+// -----------------------------
+async function loadWords() {
+  const res = await fetch("./words.json", { cache: "no-store" });
+  if (!res.ok) throw new Error(`Impossibile caricare words.json (HTTP ${res.status})`);
+
+  const data = await res.json();
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("words.json non contiene un array valido o è vuoto");
+  }
+
+  WORD_PAIRS = data
+    .filter((x) => x && typeof x.word === "string" && x.word.trim())
+    .map((x) => ({
+      word: x.word.trim(),
+      hint: (x.hint ?? "").toString().trim(),
+    }));
+
+  if (WORD_PAIRS.length === 0) throw new Error("words.json non contiene elementi validi");
+}
+
+function pickWordPair() {
+  if (Array.isArray(WORD_PAIRS) && WORD_PAIRS.length) {
+    return pickRandom(WORD_PAIRS);
+  }
+  // fallback (non dovrebbe scattare se words.json è ok)
+  return { word: "Parola", hint: "Suggerimento" };
+}
+
+// -----------------------------
+// Round / timer
+// -----------------------------
+function resetRound() {
   normalizeImpostors();
+
   app.currentPlayer = 1;
 
   const pair = pickWordPair();
@@ -100,15 +129,17 @@ function resetRound(){
 
   app.impostorIndices = sampleUniqueIndices(app.impostors, app.players);
   app.revealed = false;
+
   stopTimer();
 }
 
-function startTimer(){
+function startTimer() {
   stopTimer();
   app.remainingSec = app.minutes * 60;
 
   app.timerId = setInterval(() => {
     app.remainingSec = Math.max(0, app.remainingSec - 1);
+
     const t = $("#timerValue");
     if (t) t.textContent = formatMMSS(app.remainingSec);
 
@@ -120,8 +151,8 @@ function startTimer(){
   }, 1000);
 }
 
-function stopTimer(){
-  if (app.timerId){
+function stopTimer() {
+  if (app.timerId) {
     clearInterval(app.timerId);
     app.timerId = null;
   }
@@ -130,12 +161,13 @@ function stopTimer(){
 // -----------------------------
 // Tema chiaro/scuro
 // -----------------------------
-function applyTheme(theme){
+function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   $("#themeIcon").textContent = theme === "dark" ? "☀️" : "🌙";
   localStorage.setItem("impostore_theme", theme);
 }
-function toggleTheme(){
+
+function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme") || "light";
   applyTheme(current === "dark" ? "light" : "dark");
 }
@@ -143,25 +175,25 @@ function toggleTheme(){
 // -----------------------------
 // Render UI
 // -----------------------------
-function render(){
+function render() {
   const root = $("#cardContent");
   if (!root) return;
 
+  // HOME = schermata istruzioni/regole
   if (app.view === STATE.RULES) {
     root.innerHTML = `
-      <h2 class="h2">Regole</h2>
+      <h2 class="h2">Istruzioni</h2>
       <p class="p">
-        Ogni giocatore riceve una parola segreta, tranne uno o più: <strong>gli impostori</strong>.
-        Gli impostori sanno solo di esserlo e devono bluffare. Gli altri devono scoprirli.
+        Ogni giocatore riceve una <strong>parola segreta</strong>, tranne gli <strong>impostori</strong>.
+        Gli impostori sanno solo di esserlo e devono bluffare.
       </p>
       <p class="p">
-        Dopo la distribuzione dei ruoli, parte un conto alla rovescia. Quando finisce (o quando lo decidi),
-        si passa alla fase di voto e poi puoi vedere il risultato.
+        Dopo la distribuzione dei ruoli, parte il timer. Alla fine si discute e si vota, poi puoi visualizzare il risultato.
       </p>
       <div class="btnbar">
         <button class="btn primary" id="goSettings">Vai alle impostazioni</button>
       </div>
-      <div class="note">Suggerimento: passate il telefono senza far vedere lo schermo agli altri.</div>
+      <div class="note">Passate il telefono senza far vedere lo schermo agli altri.</div>
     `;
 
     $("#goSettings").addEventListener("click", () => {
@@ -172,8 +204,11 @@ function render(){
   }
 
   if (app.view === STATE.SETTINGS) {
+    // forza sempre un valore valido quando si cambia numero giocatori
     normalizeImpostors();
+
     const invalid = isImpostorCountInvalid();
+    const maxImp = getMaxImpostorsAllowed(app.players);
 
     root.innerHTML = `
       <h2 class="h2">Impostazioni</h2>
@@ -196,7 +231,7 @@ function render(){
             Numero di impostori
             ${invalid ? `<span class="alert-icon" title="Valore non valido" aria-label="Alert">⚠️</span>` : ``}
           </strong>
-          <span>Da 1 a 3 (default 1) — deve essere almeno 1 in meno dei giocatori</span>
+          <span>Da 1 a 3 (default 1) — massimo 1/3 dei giocatori (per difetto). Max ora: <strong>${maxImp}</strong></span>
         </div>
         <div class="counter">
           <button class="small-btn" id="impMinus" aria-label="Diminuisci impostori">−</button>
@@ -207,14 +242,14 @@ function render(){
 
       ${invalid ? `
         <div class="alert-box">
-          ⚠️ Non valido: il numero di impostori deve essere <strong>al massimo ${Math.max(1, app.players - 1)}</strong>.
+          ⚠️ Non valido: con ${app.players} giocatori, gli impostori possono essere al massimo <strong>${maxImp}</strong>.
         </div>
       ` : ``}
 
       <div class="row">
         <div class="label">
           <strong>Suggerimento per l’impostore</strong>
-          <span>Mostra una parola “simile” solo all’impostore</span>
+          <span>Mostra una parola di contesto solo all’impostore</span>
         </div>
 
         <label class="switch" title="Abilita/disabilita suggerimento">
@@ -239,7 +274,7 @@ function render(){
 
       <div class="btnbar">
         <button class="btn primary" id="startDistribution" ${invalid ? "disabled" : ""}>Avvia distribuzione ruoli</button>
-        <button class="btn soft" id="backRules">Torna alle regole</button>
+        <button class="btn soft" id="goHome">Home</button>
       </div>
     `;
 
@@ -256,6 +291,7 @@ function render(){
 
     $("#impMinus").addEventListener("click", () => {
       app.impostors = clamp(app.impostors - 1, 1, 3);
+      // qui NON normalizziamo automaticamente a maxImp? Sì: evita stati invalidi.
       normalizeImpostors();
       render();
     });
@@ -267,8 +303,6 @@ function render(){
 
     $("#hintToggle").addEventListener("change", (e) => {
       app.impostorHintEnabled = !!e.target.checked;
-      // niente render necessario, ma ok se vuoi consistenza visiva
-      // render();
     });
 
     $("#timeMinus").addEventListener("click", () => {
@@ -290,10 +324,11 @@ function render(){
       });
     }
 
-    $("#backRules").addEventListener("click", () => {
+    $("#goHome").addEventListener("click", () => {
       app.view = STATE.RULES;
       render();
     });
+
     return;
   }
 
@@ -301,7 +336,7 @@ function render(){
     const isLastPlayer = app.currentPlayer === app.players;
     const isImpostor = app.impostorIndices.includes(app.currentPlayer);
 
-    const impostorText = app.impostorHintEnabled
+    const impostorText = app.impostorHintEnabled && app.secretHint
       ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${app.secretHint}</span>`
       : `Sei l’impostore`;
 
@@ -323,8 +358,8 @@ function render(){
 
       <div class="btnbar">
         ${!app.revealed ? `
-          <button class="btn primary" id="showRole">Mostra parola</button>
-          <button class="btn soft" id="abortToSettings">Annulla</button>
+          <button class="btn primary" id="showRole">Mostra</button>
+          <button class="btn soft" id="goHome">Home</button>
         ` : `
           ${isLastPlayer ? `
             <button class="btn primary" id="startGame">Avvia partita</button>
@@ -344,9 +379,9 @@ function render(){
         app.revealed = true;
         render();
       });
-      $("#abortToSettings").addEventListener("click", () => {
+      $("#goHome").addEventListener("click", () => {
         resetRound();
-        app.view = STATE.SETTINGS;
+        app.view = STATE.RULES;
         render();
       });
     } else {
@@ -392,10 +427,11 @@ function render(){
 
     $("#goHome").addEventListener("click", () => {
       stopTimer();
-      resetRound();           // opzionale: pulisce stato turno
-      app.view = STATE.RULES; // torna alle istruzioni
+      resetRound();
+      app.view = STATE.RULES;
       render();
     });
+
     return;
   }
 
@@ -427,6 +463,7 @@ function render(){
       app.view = STATE.RULES;
       render();
     });
+
     return;
   }
 
@@ -466,6 +503,7 @@ function render(){
       app.view = STATE.RULES;
       render();
     });
+
     return;
   }
 }
@@ -473,7 +511,7 @@ function render(){
 // -----------------------------
 // Init
 // -----------------------------
-(async function init(){
+(async function init() {
   const savedTheme = localStorage.getItem("impostore_theme") || "light";
   applyTheme(savedTheme);
   $("#themeToggle").addEventListener("click", toggleTheme);
@@ -482,14 +520,12 @@ function render(){
     await loadWords();
   } catch (e) {
     console.warn(e);
-    // Mostra un messaggio chiaro in UI invece di lasciar scattare il fallback senza spiegazione
-    const root = document.querySelector("#cardContent");
+    const root = $("#cardContent");
     if (root) {
       root.innerHTML = `
         <h2 class="h2">Errore caricamento parole</h2>
         <p class="p">
-          Non riesco a caricare <strong>words.json</strong>.
-          Controlla che sia pubblicato nella stessa cartella di <strong>index.html</strong>.
+          Non riesco a caricare <strong>words.json</strong>. Assicurati che sia nella root del sito (stessa cartella di index.html).
         </p>
         <div class="reveal" style="font-size:14px; text-align:left;">
           ${String(e.message || e)}
