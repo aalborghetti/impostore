@@ -378,7 +378,7 @@ function render(){
 
       <div class="btnbar">
         <button class="btn primary" id="endTurn">Termina turno</button>
-        <button class="btn soft" id="stopToSettings">Impostazioni</button>
+        <button class="btn soft" id="goHome">Home</button>
       </div>
 
       <div class="note">Consiglio: fate un giro di descrizioni brevi della parola, poi votate.</div>
@@ -390,9 +390,10 @@ function render(){
       render();
     });
 
-    $("#stopToSettings").addEventListener("click", () => {
+    $("#goHome").addEventListener("click", () => {
       stopTimer();
-      app.view = STATE.SETTINGS;
+      resetRound();           // opzionale: pulisce stato turno
+      app.view = STATE.RULES; // torna alle istruzioni
       render();
     });
     return;
@@ -410,7 +411,7 @@ function render(){
 
       <div class="btnbar">
         <button class="btn primary" id="showResult">Visualizza risultato</button>
-        <button class="btn soft" id="backSettings">Impostazioni</button>
+        <button class="btn soft" id="goHome">Home</button>
       </div>
 
       <div class="note">Il risultato mostrerà la parola e i numeri dei giocatori impostori.</div>
@@ -421,9 +422,9 @@ function render(){
       render();
     });
 
-    $("#backSettings").addEventListener("click", () => {
+    $("#goHome").addEventListener("click", () => {
       resetRound();
-      app.view = STATE.SETTINGS;
+      app.view = STATE.RULES;
       render();
     });
     return;
@@ -448,7 +449,7 @@ function render(){
 
       <div class="btnbar">
         <button class="btn primary" id="newRound">Avvia nuovo turno</button>
-        <button class="btn soft" id="backSettings2">Impostazioni</button>
+        <button class="btn soft" id="goHome">Home</button>
       </div>
 
       <div class="note">Il nuovo turno riassegna parola e impostori usando le impostazioni correnti.</div>
@@ -460,9 +461,9 @@ function render(){
       render();
     });
 
-    $("#backSettings2").addEventListener("click", () => {
+    $("#goHome").addEventListener("click", () => {
       resetRound();
-      app.view = STATE.SETTINGS;
+      app.view = STATE.RULES;
       render();
     });
     return;
