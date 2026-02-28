@@ -284,9 +284,7 @@ function render() {
 
     if (!app.revealed) {
       $("#showRole").addEventListener("click", () => { app.revealed = true; render(); });
-      $("#goHome").addEventListener("click", () => { resetRound(); app.view = STATE.RULES; render(); });
     } else {
-      $("#goHome").addEventListener("click", () => { resetRound(); app.view = STATE.RULES; render(); });
 
       if (isLastPlayer) {
         $("#startGame").addEventListener("click", () => { app.view = STATE.PLAYING; startTimer(); render(); });
