@@ -50,10 +50,10 @@ async function setBgmEnabled(on) {
   // play() deve avvenire dentro un gesto utente → qui siamo nel click handler
   try {
     await bgm.play();
-  } catch {
-    // se il browser blocca per qualche motivo, resterà OFF visivamente? no:
-    // lasciamo ON e riproverà al prossimo click (oppure puoi revertire a OFF)
-  }
+} catch {
+  bgmEnabled = false;
+  if (icon) icon.textContent = "🔇";
+}
 }
 
 // ---------- utils ----------
