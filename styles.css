@@ -386,3 +386,33 @@ button.btn{
   object-fit: cover;
   object-position: center;
 }
+
+/* Placeholder prima della rivelazione ruolo (punto di domanda) */
+.question-illustration{
+  width: min(220px, 100%);
+  aspect-ratio: 1 / 1;
+  margin: 12px auto 6px;
+  border-radius: 18px;
+
+  /* stesso look polaroid leggero */
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 10px 10px 14px;
+  overflow: hidden;
+
+  animation: polaroidIn .18s ease-out both;
+}
+
+[data-theme="dark"] .question-illustration{
+  background: rgba(15,27,51,.92);
+}
+
+.question-illustration img{
+  width: 100%;
+  height: 100%;
+  display:block;
+  border-radius: 14px;
+  object-fit: contain;      /* icona centrata */
+  object-position: center;
+}
