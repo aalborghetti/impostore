@@ -306,7 +306,7 @@ function render() {
     root.innerHTML = `
       <h2 class="h2">Partita in corso</h2>
 
-      <div class="timer-illustration">
+      <div class="role-illustration">
         <img src="${hourglass}" alt="Clessidra" loading="eager" decoding="async">
       </div>
 
