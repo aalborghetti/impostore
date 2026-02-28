@@ -256,13 +256,17 @@ function render() {
         <div class="big">Visualizza ruolo del giocatore ${app.currentPlayer}</div>
 
         ${app.revealed ? `
-          <div class="role-illustration">
-            <img src="${roleImg}" alt="${roleAlt}" loading="eager" decoding="async">
-          </div>
-          <div class="reveal">${isImpostor ? impostorText : `Parola: ${app.secretWord}`}</div>
-        ` : `
-          <p class="p" style="text-align:center;">Premi “Mostra” per vedere il ruolo.</p>
-        `}
+  <div class="role-illustration">
+    <img src="${roleImg}" alt="${roleAlt}" loading="eager" decoding="async">
+  </div>
+  <div class="reveal">${isImpostor ? impostorText : `Parola: ${app.secretWord}`}</div>
+` : `
+  <div class="question-illustration">
+    <img src="./assets/question.webp" alt="Punto interrogativo" loading="eager" decoding="async">
+  </div>
+  <p class="p" style="text-align:center;">Premi “Mostra” per vedere il ruolo.</p>
+`}
+
       </div>
 
       <div class="btnbar">
