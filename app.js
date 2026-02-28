@@ -272,14 +272,11 @@ function render() {
       <div class="btnbar">
         ${!app.revealed ? `
           <button class="btn primary" id="showRole">Mostra</button>
-          <button class="btn soft" id="goHome">Home</button>
         ` : `
           ${isLastPlayer ? `
             <button class="btn primary" id="startGame">Avvia partita</button>
-            <button class="btn soft" id="goHome">Home</button>
           ` : `
             <button class="btn primary" id="nextPlayer">Giocatore successivo</button>
-            <button class="btn soft" id="goHome">Home</button>
           `}
         `}
       </div>
