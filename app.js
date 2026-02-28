@@ -10,7 +10,7 @@ const STATE = {
   RESULT: "result",
 };
 
-// Parole caricate da words.json
+// Caricate da words.json
 let WORD_PAIRS = [];
 
 const app = {
@@ -20,7 +20,7 @@ const app = {
   impostors: 1,          // 1..3 ma vincolato da floor(players/3)
   minutes: 3,            // 1..60
 
-  impostorHintEnabled: true, // default abilitato
+  impostorHintEnabled: true, // default ON
 
   currentPlayer: 1,
   impostorIndices: [],
@@ -55,25 +55,17 @@ function pickRandom(arr) {
 }
 
 function sampleUniqueIndices(count, maxInclusive) {
-  // ritorna array di numeri unici nel range 1..maxInclusive
   const set = new Set();
-  while (set.size < count) {
-    set.add(Math.floor(Math.random() * maxInclusive) + 1);
-  }
+  while (set.size < count) set.add(Math.floor(Math.random() * maxInclusive) + 1);
   return Array.from(set).sort((a, b) => a - b);
 }
 
 // -----------------------------
-// Vincoli impostori (NUOVO)
+// Vincoli impostori: max = floor(players/3), cap a 3, min 1
 // -----------------------------
 function getMaxImpostorsAllowed(players) {
-  // 1/3 per difetto
   const oneThird = Math.floor(players / 3);
-
-  // Limite UI (1..3) + sicurezza (players-1)
   const maxAllowed = Math.min(3, oneThird, players - 1);
-
-  // minimo 1
   return Math.max(1, maxAllowed);
 }
 
@@ -86,7 +78,7 @@ function isImpostorCountInvalid() {
 }
 
 // -----------------------------
-// Caricamento words.json (GitHub Pages OK)
+// words.json (GitHub Pages OK)
 // -----------------------------
 async function loadWords() {
   const res = await fetch("./words.json", { cache: "no-store" });
@@ -108,11 +100,8 @@ async function loadWords() {
 }
 
 function pickWordPair() {
-  if (Array.isArray(WORD_PAIRS) && WORD_PAIRS.length) {
-    return pickRandom(WORD_PAIRS);
-  }
-  // fallback (non dovrebbe scattare se words.json è ok)
-  return { word: "Parola", hint: "Suggerimento" };
+  if (Array.isArray(WORD_PAIRS) && WORD_PAIRS.length) return pickRandom(WORD_PAIRS);
+  return { word: "Parola", hint: "Suggerimento" }; // fallback
 }
 
 // -----------------------------
@@ -163,7 +152,8 @@ function stopTimer() {
 // -----------------------------
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  $("#themeIcon").textContent = theme === "dark" ? "☀️" : "🌙";
+  const icon = $("#themeIcon");
+  if (icon) icon.textContent = theme === "dark" ? "☀️" : "🌙";
   localStorage.setItem("impostore_theme", theme);
 }
 
@@ -179,7 +169,6 @@ function render() {
   const root = $("#cardContent");
   if (!root) return;
 
-  // HOME = schermata istruzioni/regole
   if (app.view === STATE.RULES) {
     root.innerHTML = `
       <h2 class="h2">Istruzioni</h2>
@@ -204,9 +193,7 @@ function render() {
   }
 
   if (app.view === STATE.SETTINGS) {
-    // forza sempre un valore valido quando si cambia numero giocatori
     normalizeImpostors();
-
     const invalid = isImpostorCountInvalid();
     const maxImp = getMaxImpostorsAllowed(app.players);
 
@@ -220,7 +207,7 @@ function render() {
         </div>
         <div class="counter">
           <button class="small-btn" id="playersMinus" aria-label="Diminuisci giocatori">−</button>
-          <div class="value" id="playersValue">${app.players}</div>
+          <div class="value">${app.players}</div>
           <button class="small-btn" id="playersPlus" aria-label="Aumenta giocatori">+</button>
         </div>
       </div>
@@ -235,7 +222,7 @@ function render() {
         </div>
         <div class="counter">
           <button class="small-btn" id="impMinus" aria-label="Diminuisci impostori">−</button>
-          <div class="value" id="impValue">${app.impostors}</div>
+          <div class="value">${app.impostors}</div>
           <button class="small-btn" id="impPlus" aria-label="Aumenta impostori">+</button>
         </div>
       </div>
@@ -265,7 +252,7 @@ function render() {
         </div>
         <div class="counter">
           <button class="small-btn" id="timeMinus" aria-label="Diminuisci tempo">−</button>
-          <div class="value" id="timeValue">${formatMMSS(app.minutes * 60)}</div>
+          <div class="value">${formatMMSS(app.minutes * 60)}</div>
           <button class="small-btn" id="timePlus" aria-label="Aumenta tempo">+</button>
         </div>
       </div>
@@ -291,7 +278,6 @@ function render() {
 
     $("#impMinus").addEventListener("click", () => {
       app.impostors = clamp(app.impostors - 1, 1, 3);
-      // qui NON normalizziamo automaticamente a maxImp? Sì: evita stati invalidi.
       normalizeImpostors();
       render();
     });
@@ -328,7 +314,6 @@ function render() {
       app.view = STATE.RULES;
       render();
     });
-
     return;
   }
 
@@ -336,31 +321,37 @@ function render() {
     const isLastPlayer = app.currentPlayer === app.players;
     const isImpostor = app.impostorIndices.includes(app.currentPlayer);
 
+    // Immagini WebP + fallback PNG (facoltativo)
     const roleWebp = isImpostor ? "./assets/impostore.webp" : "./assets/giocatore.webp";
-    const rolePng  = isImpostor ? "./assets/impostore.png"  : "./assets/giocatore.png"; // opzionale fallback
-    const roleAlt  = isImpostor ? "Impostore" : "Giocatore";
+    const rolePng = isImpostor ? "./assets/impostore.png" : "./assets/giocatore.png";
+    const roleAlt = isImpostor ? "Impostore" : "Giocatore";
 
     const impostorText = app.impostorHintEnabled && app.secretHint
       ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${app.secretHint}</span>`
       : `Sei l’impostore`;
 
+    // IMPORTANTE: pulsante "Mostra" è visibile SOLO quando revealed = false
     root.innerHTML = `
       <h2 class="h2">Distribuzione ruoli</h2>
 
       <div class="step">
         <div class="big">Visualizza ruolo del giocatore ${app.currentPlayer}</div>
+
         ${app.revealed ? `
-        <div class="role-illustration">
-          <img src="${roleImgSrc}" alt="${roleImgAlt}" loading="eager" decoding="async">
-        </div>
-      
-        <div class="reveal" id="revealBox">
-          ${isImpostor ? impostorText : `Parola: ${app.secretWord}`}
-        </div>
+          <div class="role-illustration">
+            <picture>
+              <source srcset="${roleWebp}" type="image/webp">
+              <img src="${rolePng}" alt="${roleAlt}" loading="eager" decoding="async">
+            </picture>
+          </div>
+
+          <div class="reveal" id="revealBox">
+            ${isImpostor ? impostorText : `Parola: ${app.secretWord}`}
+          </div>
         ` : `
-        <p class="p" style="text-align:center;">
-          Premi il pulsante per vedere la parola (o il ruolo impostore).
-        </p>
+          <p class="p" style="text-align:center;">
+            Premi il pulsante per vedere la parola (o il ruolo impostore).
+          </p>
         `}
       </div>
 
@@ -371,8 +362,10 @@ function render() {
         ` : `
           ${isLastPlayer ? `
             <button class="btn primary" id="startGame">Avvia partita</button>
+            <button class="btn soft" id="goHome">Home</button>
           ` : `
             <button class="btn primary" id="nextPlayer">Giocatore successivo</button>
+            <button class="btn soft" id="goHome">Home</button>
           `}
         `}
       </div>
@@ -382,17 +375,25 @@ function render() {
       </div>
     `;
 
+    // Event listeners (sempre dopo innerHTML)
     if (!app.revealed) {
       $("#showRole").addEventListener("click", () => {
         app.revealed = true;
         render();
       });
+
       $("#goHome").addEventListener("click", () => {
         resetRound();
         app.view = STATE.RULES;
         render();
       });
     } else {
+      $("#goHome").addEventListener("click", () => {
+        resetRound();
+        app.view = STATE.RULES;
+        render();
+      });
+
       if (isLastPlayer) {
         $("#startGame").addEventListener("click", () => {
           app.view = STATE.PLAYING;
@@ -522,7 +523,9 @@ function render() {
 (async function init() {
   const savedTheme = localStorage.getItem("impostore_theme") || "light";
   applyTheme(savedTheme);
-  $("#themeToggle").addEventListener("click", toggleTheme);
+
+  const themeBtn = $("#themeToggle");
+  if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
 
   try {
     await loadWords();
@@ -533,7 +536,7 @@ function render() {
       root.innerHTML = `
         <h2 class="h2">Errore caricamento parole</h2>
         <p class="p">
-          Non riesco a caricare <strong>words.json</strong>. Assicurati che sia nella root del sito (stessa cartella di index.html).
+          Non riesco a caricare <strong>words.json</strong>. Assicurati che sia nella root (stessa cartella di index.html).
         </p>
         <div class="reveal" style="font-size:14px; text-align:left;">
           ${String(e.message || e)}
