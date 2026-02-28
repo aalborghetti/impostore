@@ -336,6 +336,9 @@ function render() {
     const isLastPlayer = app.currentPlayer === app.players;
     const isImpostor = app.impostorIndices.includes(app.currentPlayer);
 
+    const roleImgSrc = isImpostor ? "./assets/impostore.png" : "./assets/giocatore.png";
+    const roleImgAlt = isImpostor ? "Impostore" : "Giocatore";
+
     const impostorText = app.impostorHintEnabled && app.secretHint
       ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${app.secretHint}</span>`
       : `Sei l’impostore`;
@@ -346,13 +349,17 @@ function render() {
       <div class="step">
         <div class="big">Visualizza ruolo del giocatore ${app.currentPlayer}</div>
         ${app.revealed ? `
-          <div class="reveal" id="revealBox">
-            ${isImpostor ? impostorText : `Parola: ${app.secretWord}`}
-          </div>
+        <div class="role-illustration">
+          <img src="${roleImgSrc}" alt="${roleImgAlt}" loading="eager" decoding="async">
+        </div>
+      
+        <div class="reveal" id="revealBox">
+          ${isImpostor ? impostorText : `Parola: ${app.secretWord}`}
+        </div>
         ` : `
-          <p class="p" style="text-align:center;">
-            Premi il pulsante per vedere la parola (o il ruolo impostore).
-          </p>
+        <p class="p" style="text-align:center;">
+          Premi il pulsante per vedere la parola (o il ruolo impostore).
+        </p>
         `}
       </div>
 
