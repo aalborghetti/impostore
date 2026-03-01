@@ -228,31 +228,33 @@ function render() {
       <div class="row">
         <div class="label">
           <strong>Numero di impostori ${invalid ? `<span class="alert-icon">⚠️</span>` : ""}</strong>
-          <span>1–3, max 1/3 giocatori. Max ora: <strong>${maxImp}</strong></span>
         </div>
         <div class="counter">
           <button class="small-btn" id="impMinus">−</button>
           <div class="value">${app.impostors}</div>
           <button class="small-btn" id="impPlus">+</button>
+          <button class="info-btn" id="infoImpostors" aria-label="Info numero giocatori">i</button>
         </div>
       </div>
 
       ${invalid ? `<div class="alert-box">Con ${app.players} giocatori, max impostori: <strong>${maxImp}</strong>.</div>` : ""}
 
       <div class="row">
-        <div class="label"><strong>Suggerimento per l’impostore</strong><span>Mostra contesto all’impostore</span></div>
+        <div class="label"><strong>Suggerimento per l’impostore</strong></div>
         <label class="switch">
           <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""}>
           <span class="slider"></span>
         </label>
+        <button class="info-btn" id="infoHint" aria-label="Info numero giocatori">i</button>
       </div>
 
       <div class="row">
-        <div class="label"><strong>Tempo</strong><span>1–60 min</span></div>
+        <div class="label"><strong>Tempo</strong></div>
         <div class="counter">
           <button class="small-btn" id="timeMinus">−</button>
           <div class="value">${formatMMSS(app.minutes * 60)}</div>
           <button class="small-btn" id="timePlus">+</button>
+          <button class="info-btn" id="infoTime" aria-label="Info numero giocatori">i</button>
         </div>
       </div>
 
