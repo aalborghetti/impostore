@@ -414,3 +414,36 @@ button.btn{
   color: var(--muted);
   line-height: 1.45;
 }
+
+/* Righe impostazioni allineate: label | controlli | info */
+.row.setting-row{
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  column-gap: 12px;
+}
+
+/* evita che la label schiacci troppo su mobile */
+.row.setting-row .label{
+  min-width: 0;
+}
+
+/* su schermi molto stretti impila i controlli sotto la label */
+@media (max-width: 420px){
+  .row.setting-row{
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label info"
+      "controls info";
+    row-gap: 10px;
+  }
+
+  .row.setting-row .label{ grid-area: label; }
+  .row.setting-row .setting-controls{ grid-area: controls; justify-self: start; }
+  .row.setting-row .info-btn{ grid-area: info; justify-self: end; }
+}
+
+/* Contenitore controlli (counter o switch) */
+.setting-controls{
+  justify-self: end;
+}
