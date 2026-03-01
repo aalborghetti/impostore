@@ -249,9 +249,9 @@ function render() {
       <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""} />
       <span class="slider"></span>
     </label>
+      <button class="info-btn" id="infoHint" aria-label="Info suggerimento">ⓘ</button>
   </div>
 
-  <button class="info-btn" id="infoHint" aria-label="Info suggerimento">ⓘ</button>
 </div>
 
       <div class="row">
