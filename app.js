@@ -239,16 +239,20 @@ function render() {
 
       ${invalid ? `<div class="alert-box">Con ${app.players} giocatori, max impostori: <strong>${maxImp}</strong>.</div>` : ""}
 
-      <div class="row">
-        <div class="label"><strong>Suggerimento per l’impostore</strong></div>
-        <div class="setting-controls">
-        <label class="switch">
-          <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""}>
-          <span class="slider"></span>
-        </label>
-        <button class="info-btn" id="infoHint" aria-label="Info numero giocatori">ⓘ</button>
-        </div>
-      </div>
+<div class="row setting-row">
+  <div class="label">
+    <strong>Suggerimento per l’impostore</strong>
+  </div>
+
+  <div class="setting-controls">
+    <label class="switch" title="Abilita/disabilita suggerimento">
+      <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""} />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <button class="info-btn" id="infoHint" aria-label="Info suggerimento">ⓘ</button>
+</div>
 
       <div class="row">
         <div class="label"><strong>Tempo</strong></div>
