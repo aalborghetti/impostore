@@ -241,10 +241,10 @@ function render() {
 
       <div class="row">
         <div class="label"><strong>Suggerimento per l’impostore</strong></div>
-        <label class="switch">
+        <div class="switch">
           <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""}>
           <span class="slider"></span>
-        </label>
+        </div>
         <button class="info-btn" id="infoHint" aria-label="Info numero giocatori">i</button>
       </div>
 
