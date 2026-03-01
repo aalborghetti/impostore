@@ -68,6 +68,49 @@ function sampleUniqueIndices(count, maxInclusive) {
   return [...set].sort((a, b) => a - b);
 }
 
+// --- Modal info (overlay) ---
+function openInfoModal(title, bodyHtml){
+  // se esiste già, rimuovila
+  closeInfoModal();
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "infoOverlay";
+
+  overlay.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-label="${title}">
+      <div class="modal-head">
+        <h3 class="modal-title">${title}</h3>
+        <button class="modal-close" id="infoClose" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">${bodyHtml}</div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // chiudi click su X
+  document.querySelector("#infoClose")?.addEventListener("click", closeInfoModal);
+
+  // chiudi click fuori dalla modale
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeInfoModal();
+  });
+
+  // chiudi ESC
+  document.addEventListener("keydown", onEscClose);
+}
+
+function onEscClose(e){
+  if (e.key === "Escape") closeInfoModal();
+}
+
+function closeInfoModal(){
+  const existing = document.querySelector("#infoOverlay");
+  if (existing) existing.remove();
+  document.removeEventListener("keydown", onEscClose);
+}
+
 // ---------- impostors max = floor(players/3), cap 3 ----------
 function getMaxImpostorsAllowed(players) {
   const oneThird = Math.floor(players / 3);
@@ -173,11 +216,12 @@ function render() {
       <h2 class="h2">Impostazioni</h2>
 
       <div class="row">
-        <div class="label"><strong>Numero di giocatori</strong><span>3–20</span></div>
+        <div class="label"><strong>Numero di giocatori</strong></div>
         <div class="counter">
           <button class="small-btn" id="playersMinus">−</button>
           <div class="value">${app.players}</div>
           <button class="small-btn" id="playersPlus">+</button>
+            <button class="info-btn" id="infoPlayers" aria-label="Info numero giocatori">i</button>
         </div>
       </div>
 
@@ -230,6 +274,36 @@ function render() {
 
     $("#timeMinus").addEventListener("click", () => { app.minutes = clamp(app.minutes - 1, 1, 60); render(); });
     $("#timePlus").addEventListener("click", () => { app.minutes = clamp(app.minutes + 1, 1, 60); render(); });
+    
+    $("#infoPlayers")?.addEventListener("click", () => {
+  openInfoModal("Numero di giocatori", `
+    Imposta quanti giocatori partecipano.<br>
+    Valori supportati: <strong>3–20</strong>. Default: <strong>6</strong>.
+  `);
+});
+
+$("#infoImpostors")?.addEventListener("click", () => {
+  const maxImp = getMaxImpostorsAllowed(app.players);
+  openInfoModal("Numero di impostori", `
+    Imposta quanti impostori ci sono nel turno.<br>
+    Range: <strong>1–3</strong>.<br>
+    Vincolo: massimo <strong>1/3</strong> dei giocatori (per difetto). Con ${app.players} giocatori, max: <strong>${maxImp}</strong>.
+  `);
+});
+
+$("#infoHint")?.addEventListener("click", () => {
+  openInfoModal("Suggerimento per l’impostore", `
+    Se attivo, l’impostore vede un <strong>suggerimento di contesto</strong> (non la parola esatta).<br>
+    Serve per aiutare a bluffare senza rivelare troppo.
+  `);
+});
+
+$("#infoTime")?.addEventListener("click", () => {
+  openInfoModal("Tempo a disposizione", `
+    Imposta la durata del turno con countdown.<br>
+    Range: <strong>01:00–60:00</strong>. Default: <strong>03:00</strong>.
+  `);
+});
 
     const startBtn = $("#startDistribution");
     if (startBtn) startBtn.addEventListener("click", () => { if (!isImpostorCountInvalid()) { resetRound(); app.view = STATE.DISTRIBUTION; render(); } });
