@@ -447,3 +447,8 @@ button.btn{
 .setting-controls{
   justify-self: end;
 }
+
+.info-btn{
+  font-size: 16px;
+  line-height: 1;
+}
