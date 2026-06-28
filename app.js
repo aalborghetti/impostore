@@ -228,26 +228,26 @@ function render() {
     root.innerHTML = `
       <h2 class="h2">Impostazioni</h2>
 
-      <div class="row">
+      <div class="row setting-row">
         <div class="label"><strong>Numero di giocatori</strong></div>
-        <div class="counter">
+        <div class="counter setting-controls">
           <button class="small-btn" id="playersMinus">−</button>
           <div class="value">${app.players}</div>
           <button class="small-btn" id="playersPlus">+</button>
-            <button class="info-btn" id="infoPlayers" aria-label="Info numero giocatori">ⓘ</button>
         </div>
+        <button class="info-btn" id="infoPlayers" aria-label="Info numero giocatori">ⓘ</button>
       </div>
 
-      <div class="row">
+      <div class="row setting-row">
         <div class="label">
           <strong>Numero di impostori ${invalid ? `<span class="alert-icon">⚠️</span>` : ""}</strong>
         </div>
-        <div class="counter">
+        <div class="counter setting-controls">
           <button class="small-btn" id="impMinus">−</button>
           <div class="value">${app.impostors}</div>
           <button class="small-btn" id="impPlus">+</button>
-          <button class="info-btn" id="infoImpostors" aria-label="Info numero giocatori">ⓘ</button>
         </div>
+        <button class="info-btn" id="infoImpostors" aria-label="Info numero impostori">ⓘ</button>
       </div>
 
       ${invalid ? `<div class="alert-box">Con ${app.players} giocatori, max impostori: <strong>${maxImp}</strong>.</div>` : ""}
@@ -262,19 +262,19 @@ function render() {
       <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""} />
       <span class="slider"></span>
     </label>
-      <button class="info-btn" id="infoHint" aria-label="Info suggerimento">ⓘ</button>
   </div>
 
+  <button class="info-btn" id="infoHint" aria-label="Info suggerimento">ⓘ</button>
 </div>
 
-      <div class="row">
+      <div class="row setting-row">
         <div class="label"><strong>Tempo</strong></div>
-        <div class="counter">
+        <div class="counter setting-controls">
           <button class="small-btn" id="timeMinus">−</button>
           <div class="value">${formatMMSS(app.minutes * 60)}</div>
           <button class="small-btn" id="timePlus">+</button>
-          <button class="info-btn" id="infoTime" aria-label="Info numero giocatori">ⓘ</button>
         </div>
+        <button class="info-btn" id="infoTime" aria-label="Info tempo">ⓘ</button>
       </div>
 
       <hr />
@@ -407,12 +407,10 @@ $("#infoTime")?.addEventListener("click", () => {
 
       <div class="btnbar">
         <button class="btn primary" id="endTurn">Termina turno</button>
-        <button class="btn soft" id="goHome">Home</button>
       </div>
     `;
 
     $("#endTurn").addEventListener("click", () => { stopTimer(); app.view = STATE.END_TURN; render(); });
-    $("#goHome").addEventListener("click", () => { stopTimer(); resetRound(); app.view = STATE.RULES; render(); });
     return;
   }
 
