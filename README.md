@@ -1,4 +1,3 @@
-```markdown
 # Gioco dell’Impostore
 
 Party game in **HTML/CSS/JavaScript vanilla** ispirato al “gioco dell’impostore”: tutti i giocatori ricevono una **parola segreta**, tranne **1–3 impostori** che devono bluffare. Opzionalmente, l’impostore può ricevere un **suggerimento di contesto** (non troppo simile alla parola).
@@ -16,13 +15,14 @@ Dopo aver abilitato GitHub Pages (Settings → Pages), la demo sarà disponibile
 ## Funzionalità
 
 - UI con **card centrale** e titolo “Gioco dell’impostore”
-- **Tema chiaro/scuro** con toggle 🌙/☀️
+- **Tema chiaro/scuro** con toggle 🌙/☀️ (preferenza salvata in `localStorage`)
+- **Musica di sottofondo** opzionale (default OFF, preferenza salvata)
 - Impostazioni:
   - Numero giocatori **3–20** (default 6)
-  - Numero impostori **1–3** (default 1) con vincolo **impostori ≤ giocatori − 1**
+  - Numero impostori **1–3** (default 1) con vincolo **impostori ≤ ⌊giocatori / 3⌋** (massimo 3)
   - Tempo turno **01:00–60:00** (default 03:00)
   - Toggle **“Suggerimento per l’impostore”** (default ON)
-- Distribuzione ruoli **uno alla volta** (passaggio del dispositivo)
+- Distribuzione ruoli **uno alla volta** (passaggio del dispositivo), con pulsante **Indietro**
   - Giocatori normali: vedono la parola
   - Impostori: vedono “Sei l’impostore” (+ suggerimento se abilitato)
 - Partita con **countdown**
@@ -33,20 +33,27 @@ Dopo aver abilitato GitHub Pages (Settings → Pages), la demo sarà disponibile
 
 ---
 
+## Sicurezza
+
+- App **completamente statica**: nessun backend, nessun account, nessuna chiamata di rete esterna (solo `words.json` locale).
+- I valori dinamici (parola, suggerimento, titoli delle modali) vengono inseriti nel DOM con **escape HTML**, per prevenire XSS anche con archivi parole non fidati.
+- È presente una **Content Security Policy** restrittiva in `index.html` (`default-src 'self'`).
+
+---
+
 ## Struttura del progetto
 
 Tutti i file sono nella **root** del repository:
 
 ```
-
 .
 ├── index.html
 ├── styles.css
 ├── app.js
 ├── words.json
-└── favicon.png   (opzionale)
-
-````
+├── favicon.png
+└── assets/        (immagini ruoli, clessidra, musica)
+```
 
 ---
 
@@ -60,20 +67,16 @@ Tutti i file sono nella **root** del repository:
 3. Salva e apri l’URL generato
 
 ### In locale
-Puoi aprire `index.html` direttamente nel browser.
-
-> Nota: se la tua versione carica `words.json` via `fetch`, alcuni browser possono bloccarlo in modalità `file://`.
-> In quel caso avvia un server locale.
+L’app carica `words.json` via `fetch`, che molti browser bloccano in modalità `file://`.
+Avvia quindi un server locale:
 
 **Python**
 ```bash
 python -m http.server 8000
-````
-
+```
 Apri `http://localhost:8000`
 
 **Node**
-
 ```bash
 npx serve
 ```
@@ -91,15 +94,12 @@ Il file `words.json` contiene un array di oggetti:
 ]
 ```
 
-* `word`: parola mostrata ai giocatori non impostori
-* `hint`: suggerimento mostrato **solo** agli impostori se l’opzione è abilitata
-* I suggerimenti sono pensati per dare contesto senza essere sinonimi troppo diretti.
+- `word`: parola mostrata ai giocatori non impostori
+- `hint`: suggerimento mostrato **solo** agli impostori se l’opzione è abilitata
+- I suggerimenti sono pensati per dare contesto senza essere sinonimi troppo diretti.
 
 ---
 
 ## Licenza
 
 MIT License. Vedi il file `LICENSE`.
-
-```
-```

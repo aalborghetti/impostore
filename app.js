@@ -30,15 +30,23 @@ const app = {
   remainingSec: 0,
 };
 
+// --- Safe storage (può lanciare in modalità privata/sandbox) ---
+const storage = {
+  get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+  set(key, val) { try { localStorage.setItem(key, val); } catch {} },
+};
+
 // --- Background music (default OFF) ---
 const bgm = new Audio("./assets/spy-theme.mp3");
 bgm.loop = true;
 bgm.volume = 0.18; // basso
+bgm.preload = "none"; // non scaricare i ~6MB finché non serve
 
-let bgmEnabled = false; // DEFAULT: gioco parte senza audio
+let bgmEnabled = storage.get("impostore_music") === "on";
 
 async function setBgmEnabled(on) {
   bgmEnabled = on;
+  storage.set("impostore_music", on ? "on" : "off");
   const icon = document.querySelector("#musicIcon");
   if (icon) icon.textContent = bgmEnabled ? "🔈" : "🔇";
 
@@ -52,11 +60,15 @@ async function setBgmEnabled(on) {
     await bgm.play();
 } catch {
   bgmEnabled = false;
+  storage.set("impostore_music", "off");
   if (icon) icon.textContent = "🔇";
 }
 }
 
 // ---------- utils ----------
+const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[c]));
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const pad2 = (n) => String(n).padStart(2, "0");
 const formatMMSS = (sec) => `${pad2(Math.floor(sec / 60))}:${pad2(sec % 60)}`;
@@ -77,10 +89,11 @@ function openInfoModal(title, bodyHtml){
   overlay.className = "modal-overlay";
   overlay.id = "infoOverlay";
 
+  const safeTitle = escapeHtml(title);
   overlay.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true" aria-label="${title}">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="${safeTitle}">
       <div class="modal-head">
-        <h3 class="modal-title">${title}</h3>
+        <h3 class="modal-title">${safeTitle}</h3>
         <button class="modal-close" id="infoClose" aria-label="Chiudi">✕</button>
       </div>
       <div class="modal-body">${bodyHtml}</div>
@@ -180,7 +193,7 @@ function startTimer() {
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   $("#themeIcon").textContent = theme === "dark" ? "☀️" : "🌙";
-  localStorage.setItem("impostore_theme", theme);
+  storage.set("impostore_theme", theme);
 }
 function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme") || "light";
@@ -328,7 +341,7 @@ $("#infoTime")?.addEventListener("click", () => {
     const roleAlt = isImpostor ? "Impostore" : "Giocatore";
 
     const impostorText = app.impostorHintEnabled && app.secretHint
-      ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${app.secretHint}</span>`
+      ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${escapeHtml(app.secretHint)}</span>`
       : `Sei l’impostore`;
 
     root.innerHTML = `
@@ -341,7 +354,7 @@ $("#infoTime")?.addEventListener("click", () => {
   <div class="role-illustration">
     <img src="${roleImg}" alt="${roleAlt}" loading="eager" decoding="async">
   </div>
-  <div class="reveal">${isImpostor ? impostorText : `Parola: ${app.secretWord}`}</div>
+  <div class="reveal">${isImpostor ? impostorText : `Parola: ${escapeHtml(app.secretWord)}`}</div>
 ` : `
   <div class="role-illustration">
     <img src="./assets/question.webp" alt="Punto interrogativo" loading="eager" decoding="async">
@@ -352,28 +365,28 @@ $("#infoTime")?.addEventListener("click", () => {
       </div>
 
       <div class="btnbar">
-        ${!app.revealed ? `
-          <button class="btn primary" id="showRole">Mostra</button>
-        ` : `
-          ${isLastPlayer ? `
-            <button class="btn primary" id="startGame">Avvia partita</button>
-          ` : `
-            <button class="btn primary" id="nextPlayer">Giocatore successivo</button>
-          `}
-        `}
+        ${!app.revealed
+          ? `<button class="btn primary" id="showRole">Mostra</button>`
+          : (isLastPlayer
+              ? `<button class="btn primary" id="startGame">Avvia partita</button>`
+              : `<button class="btn primary" id="nextPlayer">Giocatore successivo</button>`)}
+        ${app.currentPlayer > 1
+          ? `<button class="btn soft" id="prevPlayer">Indietro</button>`
+          : `<button class="btn soft" id="backSettings">Indietro</button>`}
       </div>
     `;
 
     if (!app.revealed) {
       $("#showRole").addEventListener("click", () => { app.revealed = true; render(); });
+    } else if (isLastPlayer) {
+      $("#startGame").addEventListener("click", () => { app.view = STATE.PLAYING; startTimer(); render(); });
     } else {
-
-      if (isLastPlayer) {
-        $("#startGame").addEventListener("click", () => { app.view = STATE.PLAYING; startTimer(); render(); });
-      } else {
-        $("#nextPlayer").addEventListener("click", () => { app.currentPlayer += 1; app.revealed = false; render(); });
-      }
+      $("#nextPlayer").addEventListener("click", () => { app.currentPlayer += 1; app.revealed = false; render(); });
     }
+
+    // Navigazione all'indietro (il ruolo va rivelato di nuovo con "Mostra")
+    $("#prevPlayer")?.addEventListener("click", () => { app.currentPlayer -= 1; app.revealed = false; render(); });
+    $("#backSettings")?.addEventListener("click", () => { app.view = STATE.SETTINGS; render(); });
     return;
   }
 
@@ -430,7 +443,7 @@ $("#infoTime")?.addEventListener("click", () => {
 
       <div class="step">
         <div class="big">Parola</div>
-        <div class="reveal">${app.secretWord}</div>
+        <div class="reveal">${escapeHtml(app.secretWord)}</div>
       </div>
 
       <div class="step" style="margin-top: 10px;">
@@ -459,10 +472,23 @@ $("#infoTime")?.addEventListener("click", () => {
       });
     }
 
-// imposta icona iniziale coerente
+// imposta icona iniziale coerente con la preferenza salvata
 const musicIcon = document.querySelector("#musicIcon");
 if (musicIcon) musicIcon.textContent = bgmEnabled ? "🔈" : "🔇";
-  applyTheme(localStorage.getItem("impostore_theme") || "light");
+
+// l'autoplay è bloccato dai browser: se la musica era attiva, riprendila
+// alla prima interazione dell'utente
+if (bgmEnabled) {
+  const resumeBgm = () => {
+    document.removeEventListener("click", resumeBgm);
+    document.removeEventListener("keydown", resumeBgm);
+    bgm.play().catch(() => {});
+  };
+  document.addEventListener("click", resumeBgm);
+  document.addEventListener("keydown", resumeBgm);
+}
+
+  applyTheme(storage.get("impostore_theme") || "light");
   $("#themeToggle").addEventListener("click", toggleTheme);
 
   try { await loadWords(); }
