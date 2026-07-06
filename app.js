@@ -18,8 +18,6 @@ const app = {
   impostors: 1,
   minutes: 3,
 
-  impostorHintEnabled: true,
-
   currentPlayer: 1,
   impostorIndices: [],
   secretWord: "",
@@ -252,21 +250,6 @@ function render() {
 
       ${invalid ? `<div class="alert-box">Con ${app.players} giocatori, max impostori: <strong>${maxImp}</strong>.</div>` : ""}
 
-<div class="row setting-row">
-  <div class="label">
-    <strong>Suggerimento</strong>
-  </div>
-
-  <div class="setting-controls">
-    <label class="switch" title="Abilita/disabilita suggerimento">
-      <input type="checkbox" id="hintToggle" ${app.impostorHintEnabled ? "checked" : ""} />
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <button class="info-btn" id="infoHint" aria-label="Info suggerimento">ⓘ</button>
-</div>
-
       <div class="row setting-row">
         <div class="label"><strong>Tempo</strong></div>
         <div class="counter setting-controls">
@@ -291,8 +274,6 @@ function render() {
     $("#impMinus").addEventListener("click", () => { app.impostors = clamp(app.impostors - 1, 1, 3); normalizeImpostors(); render(); });
     $("#impPlus").addEventListener("click", () => { app.impostors = clamp(app.impostors + 1, 1, 3); normalizeImpostors(); render(); });
 
-    $("#hintToggle").addEventListener("change", (e) => { app.impostorHintEnabled = !!e.target.checked; });
-
     $("#timeMinus").addEventListener("click", () => { app.minutes = clamp(app.minutes - 1, 1, 60); render(); });
     $("#timePlus").addEventListener("click", () => { app.minutes = clamp(app.minutes + 1, 1, 60); render(); });
     
@@ -309,13 +290,6 @@ $("#infoImpostors")?.addEventListener("click", () => {
     Imposta quanti impostori ci sono nel turno.<br>
     Range: <strong>1–3</strong>.<br>
     Vincolo: massimo <strong>1/3</strong> dei giocatori (per difetto). Con ${app.players} giocatori, max: <strong>${maxImp}</strong>.
-  `);
-});
-
-$("#infoHint")?.addEventListener("click", () => {
-  openInfoModal("Suggerimento per l’impostore", `
-    Se attivo, l’impostore vede un <strong>suggerimento di contesto</strong> (non la parola esatta).<br>
-    Serve per aiutare a bluffare senza rivelare troppo.
   `);
 });
 
@@ -340,7 +314,7 @@ $("#infoTime")?.addEventListener("click", () => {
     const roleImg = isImpostor ? "./assets/impostore.webp" : "./assets/giocatore.webp";
     const roleAlt = isImpostor ? "Impostore" : "Giocatore";
 
-    const impostorText = app.impostorHintEnabled && app.secretHint
+    const impostorText = app.secretHint
       ? `Sei l’impostore<br><span style="font-weight:700;font-size:14px;opacity:.9;">Suggerimento: ${escapeHtml(app.secretHint)}</span>`
       : `Sei l’impostore`;
 

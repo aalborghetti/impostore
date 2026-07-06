@@ -21,10 +21,9 @@ Dopo aver abilitato GitHub Pages (Settings → Pages), la demo sarà disponibile
   - Numero giocatori **3–20** (default 6)
   - Numero impostori **1–3** (default 1) con vincolo **impostori ≤ ⌊giocatori / 3⌋** (massimo 3)
   - Tempo turno **01:00–60:00** (default 03:00)
-  - Toggle **“Suggerimento per l’impostore”** (default ON)
 - Distribuzione ruoli **uno alla volta** (passaggio del dispositivo), con pulsante **Indietro**
   - Giocatori normali: vedono la parola
-  - Impostori: vedono “Sei l’impostore” (+ suggerimento se abilitato)
+  - Impostori: vedono “Sei l’impostore” + **suggerimento di contesto** (sempre mostrato)
 - Partita con **countdown**
 - Fine turno → schermata “Smascherate l’impostore” → **Visualizza risultato**
 - Risultato: mostra **parola** e **numeri degli impostori**
@@ -95,7 +94,7 @@ Il file `words.json` contiene un array di oggetti:
 ```
 
 - `word`: parola mostrata ai giocatori non impostori
-- `hint`: suggerimento mostrato **solo** agli impostori se l’opzione è abilitata
+- `hint`: suggerimento di contesto mostrato **sempre e solo** agli impostori
 - I suggerimenti sono pensati per dare contesto senza essere sinonimi troppo diretti.
 
 ---
