@@ -460,6 +460,12 @@ $("#infoTime")?.addEventListener("click", () => {
         <div class="reveal">${escapeHtml(app.secretWord)}</div>
       </div>
 
+      ${app.secretHint ? `
+      <div class="step" style="margin-top: 10px;">
+        <div class="big">Suggerimento impostore</div>
+        <div class="reveal">${escapeHtml(app.secretHint)}</div>
+      </div>` : ""}
+
       <div class="step" style="margin-top: 10px;">
         <div class="big">${label}</div>
         <div class="reveal">${list}</div>
