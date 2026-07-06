@@ -122,6 +122,44 @@ function closeInfoModal(){
   document.removeEventListener("keydown", onEscClose);
 }
 
+// --- Modal di conferma (con azioni) ---
+function openConfirmModal(title, message, onConfirm, { confirmText = "Conferma", cancelText = "Annulla" } = {}){
+  closeInfoModal();
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "infoOverlay";
+
+  const safeTitle = escapeHtml(title);
+  const safeMsg = escapeHtml(message);
+
+  overlay.innerHTML = `
+    <div class="modal" role="dialog" aria-modal="true" aria-label="${safeTitle}">
+      <div class="modal-head">
+        <h3 class="modal-title">${safeTitle}</h3>
+        <button class="modal-close" id="infoClose" aria-label="Chiudi">✕</button>
+      </div>
+      <div class="modal-body">${safeMsg}</div>
+      <div class="btnbar">
+        <button class="btn primary" id="confirmYes">${escapeHtml(confirmText)}</button>
+        <button class="btn soft" id="confirmNo">${escapeHtml(cancelText)}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  document.querySelector("#infoClose")?.addEventListener("click", closeInfoModal);
+  document.querySelector("#confirmNo")?.addEventListener("click", closeInfoModal);
+  document.querySelector("#confirmYes")?.addEventListener("click", () => {
+    closeInfoModal();
+    onConfirm?.();
+  });
+
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeInfoModal(); });
+  document.addEventListener("keydown", onEscClose);
+}
+
 // ---------- impostors max = floor(players/3), cap 3 ----------
 function getMaxImpostorsAllowed(players) {
   const oneThird = Math.floor(players / 3);
@@ -344,9 +382,7 @@ $("#infoTime")?.addEventListener("click", () => {
           : (isLastPlayer
               ? `<button class="btn primary" id="startGame">Avvia partita</button>`
               : `<button class="btn primary" id="nextPlayer">Giocatore successivo</button>`)}
-        ${app.currentPlayer > 1
-          ? `<button class="btn soft" id="prevPlayer">Indietro</button>`
-          : `<button class="btn soft" id="backSettings">Indietro</button>`}
+        <button class="btn soft" id="goHome">Home</button>
       </div>
     `;
 
@@ -358,9 +394,15 @@ $("#infoTime")?.addEventListener("click", () => {
       $("#nextPlayer").addEventListener("click", () => { app.currentPlayer += 1; app.revealed = false; render(); });
     }
 
-    // Navigazione all'indietro (il ruolo va rivelato di nuovo con "Mostra")
-    $("#prevPlayer")?.addEventListener("click", () => { app.currentPlayer -= 1; app.revealed = false; render(); });
-    $("#backSettings")?.addEventListener("click", () => { app.view = STATE.SETTINGS; render(); });
+    // Home con conferma: evita che si torni indietro a sbirciare i ruoli già visti
+    $("#goHome").addEventListener("click", () => {
+      openConfirmModal(
+        "Tornare alla home?",
+        "La distribuzione dei ruoli verrà annullata e tornerai alla schermata iniziale.",
+        () => { stopTimer(); resetRound(); app.view = STATE.RULES; render(); },
+        { confirmText: "Torna alla home" }
+      );
+    });
     return;
   }
 

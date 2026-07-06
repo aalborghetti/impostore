@@ -21,7 +21,7 @@ Dopo aver abilitato GitHub Pages (Settings → Pages), la demo sarà disponibile
   - Numero giocatori **3–20** (default 6)
   - Numero impostori **1–3** (default 1) con vincolo **impostori ≤ ⌊giocatori / 3⌋** (massimo 3)
   - Tempo turno **01:00–60:00** (default 03:00)
-- Distribuzione ruoli **uno alla volta** (passaggio del dispositivo), con pulsante **Indietro**
+- Distribuzione ruoli **uno alla volta** (passaggio del dispositivo); pulsante **Home** con conferma (nessun ritorno indietro, per non sbirciare i ruoli già visti)
   - Giocatori normali: vedono la parola
   - Impostori: vedono “Sei l’impostore” + **suggerimento di contesto** (sempre mostrato)
 - Partita con **countdown**
